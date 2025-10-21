@@ -1,0 +1,84 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use NeuronCore\A2A\Contract\MessageHandlerInterface;
+use NeuronCore\A2A\Enum\TaskState;
+use NeuronCore\A2A\Model\Artifact;
+use NeuronCore\A2A\Model\Message;
+use NeuronCore\A2A\Model\Part\TextPart;
+use NeuronCore\A2A\Model\Task;
+use NeuronCore\A2A\Model\TaskStatus;
+
+class {{ class }} implements MessageHandlerInterface
+{
+    /**
+     * Handle incoming messages and generate AI agent responses
+     *
+     * This is where you implement your AI agent logic:
+     * - Call OpenAI, Claude, or other AI services
+     * - Process user requests
+     * - Generate responses and artifacts
+     */
+    public function handle(Task $task, array $messages): Task
+    {
+        $history = array_merge($task->history ?? [], $messages);
+
+        // Extract user message
+        $lastMessage = end($messages);
+        $userText = $this->extractText($lastMessage);
+
+        // TODO: Implement your AI agent logic here
+        // Example with OpenAI:
+        // $response = app(\OpenAI\Client::class)->chat()->create([
+        //     'model' => 'gpt-4',
+        //     'messages' => $this->convertToAIFormat($history),
+        // ]);
+        // $responseText = $response->choices[0]->message->content;
+
+        // For now, return a simple echo response
+        $responseText = "I received your message: {$userText}";
+
+        // Create agent response message
+        $agentMessage = new Message(
+            role: 'agent',
+            parts: [new TextPart($responseText)]
+        );
+
+        $history[] = $agentMessage;
+
+        // Create artifact with the response
+        $artifact = new Artifact(
+            id: uniqid('artifact_', true),
+            parts: [new TextPart($responseText)]
+        );
+
+        // Return completed task
+        return new Task(
+            id: $task->id,
+            contextId: $task->contextId,
+            status: new TaskStatus(
+                state: TaskState::COMPLETED,
+                message: new TextPart('Task completed successfully')
+            ),
+            history: $history,
+            artifacts: [$artifact],
+            metadata: $task->metadata,
+        );
+    }
+
+    protected function extractText(Message $message): string
+    {
+        $text = '';
+
+        foreach ($message->parts as $part) {
+            if ($part instanceof TextPart) {
+                $text .= $part->text;
+            }
+        }
+
+        return $text;
+    }
+}

@@ -4,16 +4,22 @@ declare(strict_types=1);
 
 namespace NeuronCore\A2A\Http\Laravel;
 
+use Illuminate\Routing\Route as LaravelRoute;
 use Illuminate\Support\Facades\Route;
 
 final class A2A
 {
-    public static function routes(string $path = '/a2a'): void
+    /**
+     * @param class-string $serverClass
+     */
+    public static function route(string $path, string $serverClass): LaravelRoute
     {
-        Route::post($path, A2AController::class)
-            ->name('a2a.handle');
+        $agentCardPath = rtrim($path, '/') . '/.well-known/agent-card.json';
 
-        Route::get('/.well-known/agent-card.json', A2AController::class)
-            ->name('a2a.agent-card');
+        Route::get($agentCardPath, [A2AController::class, 'handleAgentCard'])
+            ->defaults('serverClass', $serverClass);
+
+        return Route::post($path, [A2AController::class, 'handle'])
+            ->defaults('serverClass', $serverClass);
     }
 }

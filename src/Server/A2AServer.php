@@ -4,25 +4,37 @@ declare(strict_types=1);
 
 namespace NeuronCore\A2A\Server;
 
-use NeuronCore\A2A\Contract\AgentCardProviderInterface;
 use NeuronCore\A2A\Contract\MessageHandlerInterface;
 use NeuronCore\A2A\Contract\TaskRepositoryInterface;
 use NeuronCore\A2A\Enum\TaskState;
 use NeuronCore\A2A\JsonRpc\JsonRpcError;
 use NeuronCore\A2A\JsonRpc\JsonRpcRequest;
 use NeuronCore\A2A\JsonRpc\JsonRpcResponse;
+use NeuronCore\A2A\Model\AgentCard\AgentCard;
 use NeuronCore\A2A\Model\Part\TextPart;
 use NeuronCore\A2A\Model\Response\ListTasksResult;
 use NeuronCore\A2A\Model\Task;
 use NeuronCore\A2A\Model\TaskStatus;
 
-final class A2AServer
+abstract class A2AServer
 {
-    public function __construct(
-        protected TaskRepositoryInterface $taskRepository,
-        protected MessageHandlerInterface $messageHandler,
-        protected AgentCardProviderInterface $agentCardProvider,
-    ) {
+    protected ?TaskRepositoryInterface $taskRepository = null;
+    protected ?MessageHandlerInterface $messageHandler = null;
+
+    abstract protected function taskRepository(): TaskRepositoryInterface;
+
+    abstract protected function messageHandler(): MessageHandlerInterface;
+
+    abstract protected function agentCard(): AgentCard;
+
+    protected function getTaskRepository(): TaskRepositoryInterface
+    {
+        return $this->taskRepository ??= $this->taskRepository();
+    }
+
+    protected function getMessageHandler(): MessageHandlerInterface
+    {
+        return $this->messageHandler ??= $this->messageHandler();
     }
 
     public function handleRequest(JsonRpcRequest $request): JsonRpcResponse|JsonRpcError
@@ -59,13 +71,13 @@ final class A2AServer
         $params = RequestParser::parseMessageSendParams($params);
 
         $task = $params->taskId !== null
-            ? $this->taskRepository->find($params->taskId)
+            ? $this->getTaskRepository()->find($params->taskId)
             : null;
 
         if (!$task instanceof Task) {
             $task = new Task(
-                id: $this->taskRepository->generateTaskId(),
-                contextId: $this->taskRepository->generateContextId(),
+                id: $this->getTaskRepository()->generateTaskId(),
+                contextId: $this->getTaskRepository()->generateContextId(),
                 status: new TaskStatus(
                     state: TaskState::QUEUED,
                     message: new TextPart('Task created'),
@@ -78,8 +90,8 @@ final class A2AServer
             throw new \InvalidArgumentException('Task is in terminal state and cannot be modified');
         }
 
-        $task = $this->messageHandler->handle($task, $params->messages);
-        $this->taskRepository->save($task);
+        $task = $this->getMessageHandler()->handle($task, $params->messages);
+        $this->getTaskRepository()->save($task);
 
         return $task->toArray();
     }
@@ -89,7 +101,7 @@ final class A2AServer
         $params = (array) $params;
         $taskId = $params['taskId'] ?? throw new \InvalidArgumentException('taskId is required');
 
-        $task = $this->taskRepository->find($taskId);
+        $task = $this->getTaskRepository()->find($taskId);
 
         if (!$task instanceof Task) {
             throw new \InvalidArgumentException('Task not found');
@@ -107,8 +119,8 @@ final class A2AServer
             $filters['contextId'] = $params->contextId;
         }
 
-        $tasks = $this->taskRepository->findAll($filters, $params->limit, $params->offset);
-        $total = $this->taskRepository->count($filters);
+        $tasks = $this->getTaskRepository()->findAll($filters, $params->limit, $params->offset);
+        $total = $this->getTaskRepository()->count($filters);
 
         $result = new ListTasksResult($tasks, $total);
 
@@ -120,7 +132,7 @@ final class A2AServer
         $params = (array) $params;
         $taskId = $params['taskId'] ?? throw new \InvalidArgumentException('taskId is required');
 
-        $task = $this->taskRepository->find($taskId);
+        $task = $this->getTaskRepository()->find($taskId);
 
         if (!$task instanceof Task) {
             throw new \InvalidArgumentException('Task not found');
@@ -142,13 +154,18 @@ final class A2AServer
             metadata: $task->metadata,
         );
 
-        $this->taskRepository->save($task);
+        $this->getTaskRepository()->save($task);
 
         return $task->toArray();
     }
 
     protected function handleGetAgentCard(): array
     {
-        return $this->agentCardProvider->getAgentCard()->toArray();
+        return $this->agentCard()->toArray();
+    }
+
+    public function getAgentCard(): array
+    {
+        return $this->agentCard()->toArray();
     }
 }

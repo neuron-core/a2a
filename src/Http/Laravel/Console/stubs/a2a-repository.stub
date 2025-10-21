@@ -1,0 +1,78 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Illuminate\Support\Str;
+use NeuronCore\A2A\Contract\TaskRepositoryInterface;
+use NeuronCore\A2A\Model\Task;
+
+class {{ class }} implements TaskRepositoryInterface
+{
+    protected array $tasks = [];
+
+    public function save(Task $task): void
+    {
+        // TODO: Implement task persistence (database, Redis, etc.)
+        // Example using Eloquent:
+        // TaskModel::updateOrCreate(
+        //     ['id' => $task->id],
+        //     ['data' => serialize($task)]
+        // );
+
+        // For now, using in-memory storage
+        $this->tasks[$task->id] = $task;
+    }
+
+    public function find(string $taskId): ?Task
+    {
+        // TODO: Implement task retrieval
+        // Example:
+        // $model = TaskModel::find($taskId);
+        // return $model ? unserialize($model->data) : null;
+
+        return $this->tasks[$taskId] ?? null;
+    }
+
+    public function findAll(array $filters = [], ?int $limit = null, ?int $offset = null): array
+    {
+        // TODO: Implement filtered task querying
+        $tasks = $this->tasks;
+
+        if (isset($filters['contextId'])) {
+            $tasks = array_filter($tasks, fn (Task $task) => $task->contextId === $filters['contextId']);
+        }
+
+        $tasks = array_values($tasks);
+
+        if ($offset !== null) {
+            $tasks = array_slice($tasks, $offset);
+        }
+
+        if ($limit !== null) {
+            $tasks = array_slice($tasks, 0, $limit);
+        }
+
+        return $tasks;
+    }
+
+    public function count(array $filters = []): int
+    {
+        if (empty($filters)) {
+            return count($this->tasks);
+        }
+
+        return count($this->findAll($filters));
+    }
+
+    public function generateTaskId(): string
+    {
+        return (string) Str::uuid();
+    }
+
+    public function generateContextId(): string
+    {
+        return (string) Str::uuid();
+    }
+}

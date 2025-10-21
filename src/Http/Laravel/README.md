@@ -2,9 +2,15 @@
 
 This package provides Laravel-specific adapters for the A2A protocol server.
 
-## Installation
+## Overview
 
-1. **Register the Service Provider** in `config/app.php`:
+The Laravel adapter allows you to expose **multiple AI agents** in a single Laravel application. Each agent is a separate class that extends `A2AServer` and can be registered on its own route with independent middleware.
+
+## Quick Start
+
+### 1. Install & Register the Service Provider
+
+In `config/app.php`:
 
 ```php
 'providers' => [
@@ -15,16 +21,151 @@ This package provides Laravel-specific adapters for the A2A protocol server.
 
 Or if using Laravel 11+ with auto-discovery, it will be registered automatically.
 
-2. **Implement the Required Interfaces**
+### 2. Generate Your Agent
 
-You must implement three interfaces to complete the integration:
+Use the Artisan command to scaffold a new agent:
 
-### TaskRepositoryInterface
+```bash
+php artisan make:a2a DataAnalyst
+```
 
-Store and retrieve tasks (use Eloquent, Redis, etc.):
+This generates four files in `app/A2A/`:
+- `DataAnalystServer.php` - Main server class
+- `DataAnalystTaskRepository.php` - Task persistence
+- `DataAnalystMessageHandler.php` - AI agent logic (your implementation)
+- `DataAnalystAgentCard.php` - Agent capabilities definition
+
+### 3. Implement Your Agent Logic
+
+Open `DataAnalystMessageHandler.php` and add your AI logic:
 
 ```php
-namespace App\A2A;
+public function handle(Task $task, array $messages): Task
+{
+    // Call your AI service (OpenAI, Claude, etc.)
+    $response = app(\OpenAI\Client::class)->chat()->create([
+        'model' => 'gpt-4',
+        'messages' => $this->convertToAIFormat($messages),
+    ]);
+
+    // Return completed task with response
+    // ... (see generated file for full implementation)
+}
+```
+
+### 4. Register Routes
+
+In `routes/api.php`:
+
+```php
+use NeuronCore\A2A\Http\Laravel\A2A;
+use App\A2A\DataAnalystServer;
+
+A2A::route('/a2a/data-analyst', DataAnalystServer::class);
+```
+
+Done! Your agent is now available at:
+- `POST /a2a/data-analyst` - Send messages
+- `GET /a2a/data-analyst/.well-known/agent-card.json` - Get capabilities
+
+## Manual Setup (Alternative)
+
+If you prefer to create servers manually instead of using the generator:
+
+### Create Your Agent Server Class
+
+Each agent extends `A2AServer` and implements three factory methods:
+
+```php
+namespace App\Agents;
+
+use NeuronCore\A2A\Server\A2AServer;
+use NeuronCore\A2A\Contract\TaskRepositoryInterface;
+use NeuronCore\A2A\Contract\MessageHandlerInterface;
+use NeuronCore\A2A\Contract\AgentCardProviderInterface;
+
+class DataAnalystAgent extends A2AServer
+{
+    protected function createTaskRepository(): TaskRepositoryInterface
+    {
+        // Return your task repository implementation
+        return app(EloquentTaskRepository::class);
+    }
+
+    protected function createMessageHandler(): MessageHandlerInterface
+    {
+        // Return your message handler - this is your AI agent logic
+        return new DataAnalysisHandler(
+            openai: app(\OpenAI\Client::class),
+            // ... other dependencies
+        );
+    }
+
+    protected function createAgentCardProvider(): AgentCardProviderInterface
+    {
+        // Return agent card with your agent's capabilities
+        return new DataAnalystCardProvider();
+    }
+}
+```
+
+```
+
+Each `A2A::route()` call registers **two endpoints**:
+- `POST /a2a/data-analyst` - JSON-RPC endpoint
+- `GET /a2a/data-analyst/.well-known/agent-card.json` - Agent card
+
+The method returns a Laravel `Route` instance, so you can chain middleware:
+
+```php
+A2A::route('/a2a/data-analyst', DataAnalystServer::class)
+    ->middleware(['auth:api', 'throttle:60,1']);
+```
+
+## Complete Example
+
+See `src/Http/Laravel/Examples/` for complete working examples:
+- `DataAnalystServer.php` - Data analysis agent
+- `TranslatorServer.php` - Translation agent
+
+## Artisan Command Reference
+
+### make:a2a Command
+
+```bash
+php artisan make:a2a {name}
+```
+
+**Arguments:**
+- `name` - The name of your agent (e.g., `DataAnalyst`, `Translator`, `CodeGenerator`)
+
+**What it generates:**
+- Server class: `app/A2A/{Name}Server.php`
+- Task repository: `app/A2A/{Name}TaskRepository.php`
+- Message handler: `app/A2A/{Name}MessageHandler.php`
+- Agent card provider: `app/A2A/{Name}AgentCardProvider.php`
+
+**Example:**
+```bash
+php artisan make:a2a DataAnalyst
+```
+
+Generates:
+- `App\A2A\DataAnalystServer`
+- `App\A2A\DataAnalystTaskRepository`
+- `App\A2A\DataAnalystMessageHandler`
+- `App\A2A\DataAnalystAgentCardProvider`
+
+The command also provides next steps in the output, including the exact route registration code.
+
+## Detailed Implementation Guide
+
+### Task Repository
+
+Implement `TaskRepositoryInterface` to persist tasks:
+
+```php
+namespace App\Repositories;
 
 use NeuronCore\A2A\Contract\TaskRepositoryInterface;
 use NeuronCore\A2A\Model\Task;
@@ -33,64 +174,71 @@ class EloquentTaskRepository implements TaskRepositoryInterface
 {
     public function save(Task $task): void
     {
-        // Store task in database
+        TaskModel::updateOrCreate(
+            ['id' => $task->id],
+            ['data' => serialize($task)]
+        );
     }
 
     public function find(string $taskId): ?Task
     {
-        // Retrieve task from database
+        $model = TaskModel::find($taskId);
+        return $model ? unserialize($model->data) : null;
     }
 
     public function findAll(array $filters = [], ?int $limit = null, ?int $offset = null): array
     {
-        // Query tasks with filters
+        // Implement querying logic
     }
 
     public function count(array $filters = []): int
     {
-        // Count tasks
+        // Implement count logic
     }
 
     public function generateTaskId(): string
     {
-        return \Illuminate\Support\Str::uuid()->toString();
+        return (string) \Illuminate\Support\Str::uuid();
     }
 
     public function generateContextId(): string
     {
-        return \Illuminate\Support\Str::uuid()->toString();
+        return (string) \Illuminate\Support\Str::uuid();
     }
 }
 ```
 
-### MessageHandlerInterface
+### Message Handler (AI Agent Logic)
 
-Process messages and call your AI service:
+This is where you implement your actual AI agent:
 
 ```php
-namespace App\A2A;
+namespace App\Handlers;
 
 use NeuronCore\A2A\Contract\MessageHandlerInterface;
-use NeuronCore\A2A\Enum\TaskState;
-use NeuronCore\A2A\Model\Artifact;
+use NeuronCore\A2A\Model\Task;
 use NeuronCore\A2A\Model\Message;
 use NeuronCore\A2A\Model\Part\TextPart;
-use NeuronCore\A2A\Model\Task;
+use NeuronCore\A2A\Model\Artifact;
 use NeuronCore\A2A\Model\TaskStatus;
+use NeuronCore\A2A\Enum\TaskState;
 use OpenAI\Client;
 
-class OpenAIMessageHandler implements MessageHandlerInterface
+class DataAnalysisHandler implements MessageHandlerInterface
 {
     public function __construct(
         protected Client $openai,
-    ) {
-    }
+    ) {}
 
     public function handle(Task $task, array $messages): Task
     {
         $history = array_merge($task->history ?? [], $messages);
 
-        // Call OpenAI API
+        // Extract user query
+        $lastMessage = end($messages);
+        $userText = $this->extractText($lastMessage);
+
+        // Call AI service (OpenAI, Claude, etc.)
         $response = $this->openai->chat()->create([
             'model' => 'gpt-4',
             'messages' => $this->convertToOpenAIFormat($history),
@@ -99,15 +247,15 @@ class OpenAIMessageHandler implements MessageHandlerInterface
         // Create agent response
         $agentMessage = new Message(
             role: 'agent',
-            parts: [new TextPart($response->choices[0]->message->content)],
+            parts: [new TextPart($response->choices[0]->message->content)]
         );
 
         $history[] = $agentMessage;
 
-        // Create artifact
+        // Create artifact with result
         $artifact = new Artifact(
             id: uniqid('artifact_'),
-            parts: [new TextPart($response->choices[0]->message->content)],
+            parts: [new TextPart($response->choices[0]->message->content)]
         );
 
         // Return completed task
@@ -116,57 +264,50 @@ class OpenAIMessageHandler implements MessageHandlerInterface
             contextId: $task->contextId,
             status: new TaskStatus(
                 state: TaskState::COMPLETED,
-                message: new TextPart('AI response generated'),
+                message: new TextPart('Analysis completed')
             ),
             history: $history,
             artifacts: [$artifact],
-            metadata: $task->metadata,
         );
-    }
-
-    protected function convertToOpenAIFormat(array $history): array
-    {
-        // Convert A2A messages to OpenAI format
     }
 }
 ```
 
-### AgentCardProviderInterface
+### Agent Card
 
 Define your agent's capabilities:
 
 ```php
 namespace App\A2A;
 
-use NeuronCore\A2A\Contract\AgentCardProviderInterface;
 use NeuronCore\A2A\Model\AgentCard\AgentCard;
 use NeuronCore\A2A\Model\AgentCard\AgentProvider;
 use NeuronCore\A2A\Model\AgentCard\AgentSkill;
 
-class MyAgentCardProvider implements AgentCardProviderInterface
+class DataAnalystAgentCard
 {
-    public function getAgentCard(): AgentCard
+    public function get(): AgentCard
     {
         return new AgentCard(
             protocolVersion: '0.3.0',
-            name: config('a2a.agent.name'),
-            description: config('a2a.agent.description'),
-            url: config('app.url') . '/a2a',
+            name: 'Data Analyst Agent',
+            description: 'Specialized in data analysis and statistics',
+            url: url('/a2a/data-analyst'),
             preferredTransport: 'JSONRPC',
             version: '1.0.0',
             provider: new AgentProvider(
-                organization: config('a2a.organization.name'),
-                url: config('a2a.organization.url'),
+                organization: config('app.name'),
+                url: config('app.url'),
             ),
             skills: [
                 new AgentSkill(
-                    id: 'general-assistant',
-                    name: 'General Assistant',
-                    description: 'Helps with various tasks',
-                    tags: ['assistant', 'general'],
-                    examples: ['Help me write an email', 'Analyze this data'],
-                    inputModes: ['text/plain'],
-                    outputModes: ['text/plain'],
+                    id: 'data-analysis',
+                    name: 'Data Analysis',
+                    description: 'Analyze datasets and provide insights',
+                    tags: ['data', 'statistics'],
+                    examples: ['Analyze this sales data', 'Calculate statistics'],
+                    inputModes: ['text/plain', 'application/json'],
+                    outputModes: ['text/plain', 'application/json'],
                 ),
             ],
         );
@@ -174,86 +315,33 @@ class MyAgentCardProvider implements AgentCardProviderInterface
 }
 ```
 
-3. **Bind Your Implementations** in `App\Providers\AppServiceProvider`:
-
-```php
-use NeuronCore\A2A\Contract\TaskRepositoryInterface;
-use NeuronCore\A2A\Contract\MessageHandlerInterface;
-use NeuronCore\A2A\Contract\AgentCardProviderInterface;
-use App\A2A\EloquentTaskRepository;
-use App\A2A\OpenAIMessageHandler;
-use App\A2A\MyAgentCardProvider;
-
-public function register(): void
-{
-    $this->app->singleton(TaskRepositoryInterface::class, EloquentTaskRepository::class);
-    $this->app->singleton(MessageHandlerInterface::class, OpenAIMessageHandler::class);
-    $this->app->singleton(AgentCardProviderInterface::class, MyAgentCardProvider::class);
-}
-```
-
-4. **Register Routes** in `routes/api.php`:
-
-```php
-use NeuronCore\A2A\Http\Laravel\A2A;
-
-A2A::routes('/a2a');
-```
-
-This registers:
-- `POST /a2a` - JSON-RPC endpoint
-- `GET /.well-known/agent-card.json` - Agent card endpoint
-
-## Usage
-
-Your A2A server is now available at:
+## Testing Your Agents
 
 ```bash
+# Get agent card
+curl http://localhost/a2a/data-analyst/.well-known/agent-card.json
+
 # Send a message
-curl -X POST http://localhost/api/a2a \
+curl -X POST http://localhost/a2a/data-analyst \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
     "id": 1,
     "method": "message/send",
     "params": {
-      "messages": [
-        {
-          "role": "user",
-          "parts": [
-            {
-              "kind": "text",
-              "text": "Hello!"
-            }
-          ]
-        }
-      ]
+      "messages": [{
+        "role": "user",
+        "parts": [{"kind": "text", "text": "Analyze this data"}]
+      }]
     }
   }'
-
-# Get agent card
-curl http://localhost/.well-known/agent-card.json
 ```
 
-## Middleware
+## Benefits of This Architecture
 
-Apply Laravel middleware to your A2A routes:
-
-```php
-use NeuronCore\A2A\Http\Laravel\A2AController;
-
-Route::middleware(['auth:api', 'throttle:60,1'])
-    ->post('/a2a', A2AController::class);
-
-Route::get('/.well-known/agent-card.json', A2AController::class);
-```
-
-## Error Handling
-
-If you haven't bound the required interfaces, Laravel will throw a binding exception with a clear error message:
-
-```
-Target [NeuronCore\A2A\Contract\TaskRepositoryInterface] is not instantiable.
-```
-
-Make sure all three interfaces are bound in your service provider.
+✅ **Multiple Agents** - Host many agents in one Laravel app
+✅ **Independent Configuration** - Each agent has its own middleware, rate limits
+✅ **Clean Encapsulation** - Each agent is self-contained
+✅ **Laravel DI Compatible** - Use dependency injection in factory methods
+✅ **Easy Testing** - Test each agent independently
+✅ **Flexible** - Mix different AI services, repositories per agent

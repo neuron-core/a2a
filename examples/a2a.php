@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use NeuronCore\A2A\Contract\AgentCardProviderInterface;
 use NeuronCore\A2A\Contract\MessageHandlerInterface;
 use NeuronCore\A2A\Enum\TaskState;
 use NeuronCore\A2A\Example\InMemoryTaskRepository;
@@ -21,62 +20,67 @@ use NeuronCore\A2A\Model\Task;
 use NeuronCore\A2A\Model\TaskStatus;
 use NeuronCore\A2A\Server\A2AServer;
 
-// 1. Create a simple message handler implementation
-class SimpleMessageHandler implements MessageHandlerInterface
+// 1. Create a concrete server implementation extending A2AServer
+class SimpleEchoServer extends A2AServer
 {
-    public function handle(Task $task, array $messages): Task
+    protected function taskRepository(): \NeuronCore\A2A\Contract\TaskRepositoryInterface
     {
-        // Merge new messages with existing history
-        $history = $task->history ?? [];
-        $history = array_merge($history, $messages);
-
-        // Process the last user message
-        $lastMessage = end($messages);
-        $userText = '';
-
-        foreach ($lastMessage->parts as $part) {
-            if ($part instanceof TextPart) {
-                $userText .= $part->text;
-            }
-        }
-
-        // Create a simple response
-        $agentMessage = new Message(
-            role: 'agent',
-            parts: [
-                new TextPart("Hello! You said: {$userText}"),
-            ],
-        );
-
-        $history[] = $agentMessage;
-
-        // Create an artifact with the response
-        $artifact = new Artifact(
-            id: uniqid('artifact_', true),
-            parts: [
-                new TextPart("Response to: {$userText}"),
-            ],
-        );
-
-        // Return updated task with completed status
-        return new Task(
-            id: $task->id,
-            contextId: $task->contextId,
-            status: new TaskStatus(
-                state: TaskState::COMPLETED,
-                message: new TextPart('Task completed successfully'),
-            ),
-            history: $history,
-            artifacts: [$artifact],
-            metadata: $task->metadata,
-        );
+        return new InMemoryTaskRepository();
     }
-}
 
-// 2. Create an agent card provider
-class SimpleAgentCardProvider implements AgentCardProviderInterface
-{
-    public function getAgentCard(): AgentCard
+    protected function messageHandler(): MessageHandlerInterface
+    {
+        return new class implements MessageHandlerInterface {
+            public function handle(Task $task, array $messages): Task
+            {
+                // Merge new messages with existing history
+                $history = array_merge($task->history ?? [], $messages);
+
+                // Process the last user message
+                $lastMessage = end($messages);
+                $userText = '';
+
+                foreach ($lastMessage->parts as $part) {
+                    if ($part instanceof TextPart) {
+                        $userText .= $part->text;
+                    }
+                }
+
+                // Create a simple response
+                $agentMessage = new Message(
+                    role: 'agent',
+                    parts: [
+                        new TextPart("Hello! You said: {$userText}"),
+                    ],
+                );
+
+                $history[] = $agentMessage;
+
+                // Create an artifact with the response
+                $artifact = new Artifact(
+                    id: uniqid('artifact_', true),
+                    parts: [
+                        new TextPart("Response to: {$userText}"),
+                    ],
+                );
+
+                // Return updated task with completed status
+                return new Task(
+                    id: $task->id,
+                    contextId: $task->contextId,
+                    status: new TaskStatus(
+                        state: TaskState::COMPLETED,
+                        message: new TextPart('Task completed successfully'),
+                    ),
+                    history: $history,
+                    artifacts: [$artifact],
+                    metadata: $task->metadata,
+                );
+            }
+        };
+    }
+
+    protected function agentCard(): AgentCard
     {
         return new AgentCard(
             protocolVersion: '0.3.0',
@@ -107,7 +111,7 @@ class SimpleAgentCardProvider implements AgentCardProviderInterface
     }
 }
 
-// 3. Create simple HTTP request/response adapters
+// 2. Create simple HTTP request/response adapters
 class SimpleHttpRequest implements HttpRequestInterface
 {
     public function __construct(
@@ -174,40 +178,20 @@ class SimpleHttpResponse implements HttpResponseInterface
     }
 }
 
-// 4. Initialize the A2A server
-$taskRepository = new InMemoryTaskRepository();
-$messageHandler = new SimpleMessageHandler();
-$agentCardProvider = new SimpleAgentCardProvider();
+// 3. Initialize the concrete A2A server
+$server = new SimpleEchoServer();
 
-$server = new A2AServer(
-    taskRepository: $taskRepository,
-    messageHandler: $messageHandler,
-    agentCardProvider: $agentCardProvider,
-);
-
-$httpHandler = new A2AHttpHandler(
-    server: $server,
-    agentCardProvider: $agentCardProvider,
-);
-
-// 5. Example 1: Get Agent Card
+// 4. Example 1: Get Agent Card
 echo "=== Example 1: Get Agent Card ===\n\n";
+echo "HTTP/1.1 200\n";
+echo "Content-Type: application/json\n\n";
+echo json_encode($server->getAgentCard(), JSON_PRETTY_PRINT);
+echo "\n\n\n";
 
-$request = new SimpleHttpRequest(
-    method: 'GET',
-    path: '/.well-known/agent-card.json',
-    body: '',
-);
-
-$response = new SimpleHttpResponse();
-$httpHandler->handle($request, $response);
-
-echo "\n\n";
-
-// 6. Example 2: Send a message
+// 5. Example 2: Send a message
 echo "=== Example 2: Send a Message ===\n\n";
 
-$jsonRpcRequest = json_encode([
+$jsonRpcRequest = \NeuronCore\A2A\JsonRpc\JsonRpcRequest::fromArray([
     'jsonrpc' => '2.0',
     'id' => 1,
     'method' => 'message/send',
@@ -226,22 +210,17 @@ $jsonRpcRequest = json_encode([
     ],
 ]);
 
-$request = new SimpleHttpRequest(
-    method: 'POST',
-    path: '/a2a',
-    body: $jsonRpcRequest,
-    headers: ['content-type' => 'application/json'],
-);
+$jsonRpcResponse = $server->handleRequest($jsonRpcRequest);
 
-$response = new SimpleHttpResponse();
-$httpHandler->handle($request, $response);
+echo "HTTP/1.1 200\n";
+echo "Content-Type: application/json\n\n";
+echo json_encode($jsonRpcResponse->toArray(), JSON_PRETTY_PRINT);
+echo "\n\n\n";
 
-echo "\n\n";
-
-// 7. Example 3: List all tasks
+// 6. Example 3: List all tasks
 echo "=== Example 3: List Tasks ===\n\n";
 
-$jsonRpcRequest = json_encode([
+$jsonRpcRequest = \NeuronCore\A2A\JsonRpc\JsonRpcRequest::fromArray([
     'jsonrpc' => '2.0',
     'id' => 2,
     'method' => 'tasks/list',
@@ -250,13 +229,9 @@ $jsonRpcRequest = json_encode([
     ],
 ]);
 
-$request = new SimpleHttpRequest(
-    method: 'POST',
-    path: '/a2a',
-    body: $jsonRpcRequest,
-);
+$jsonRpcResponse = $server->handleRequest($jsonRpcRequest);
 
-$response = new SimpleHttpResponse();
-$httpHandler->handle($request, $response);
-
+echo "HTTP/1.1 200\n";
+echo "Content-Type: application/json\n\n";
+echo json_encode($jsonRpcResponse->toArray(), JSON_PRETTY_PRINT);
 echo "\n";

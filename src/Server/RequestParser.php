@@ -14,7 +14,7 @@ use NeuronCore\A2A\Model\Part\TextPart;
 use NeuronCore\A2A\Model\Request\ListTasksParams;
 use NeuronCore\A2A\Model\Request\MessageSendParams;
 
-final class RequestParser
+class RequestParser
 {
     public static function parseMessageSendParams(mixed $params): MessageSendParams
     {

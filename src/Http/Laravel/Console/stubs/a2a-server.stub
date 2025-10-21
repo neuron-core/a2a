@@ -1,0 +1,28 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use NeuronCore\A2A\Contract\MessageHandlerInterface;
+use NeuronCore\A2A\Contract\TaskRepositoryInterface;
+use NeuronCore\A2A\Model\AgentCard\AgentCard;
+use NeuronCore\A2A\Server\A2AServer;
+
+class {{ class }} extends A2AServer
+{
+    protected function taskRepository(): TaskRepositoryInterface
+    {
+        return app({{ serverClass }}TaskRepository::class);
+    }
+
+    protected function messageHandler(): MessageHandlerInterface
+    {
+        return app({{ serverClass }}MessageHandler::class);
+    }
+
+    protected function agentCard(): AgentCard
+    {
+        return app({{ serverClass }}AgentCard::class)->get();
+    }
+}

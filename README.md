@@ -57,59 +57,7 @@ The **A2A (Agent-to-Agent) Protocol** is an open standard that enables seamless 
 
 ## Architecture
 
-### Project Structure
-
-```
-src/
-├── Contract/                      # Core interfaces
-│   ├── TaskRepositoryInterface.php
-│   ├── MessageHandlerInterface.php
-│   └── AgentCardProviderInterface.php (deprecated - use agentCard() method)
-├── Enum/
-│   └── TaskState.php              # Task lifecycle states
-├── Model/                         # Domain models
-│   ├── Task.php
-│   ├── TaskStatus.php
-│   ├── Message.php
-│   ├── Artifact.php
-│   ├── Part/                      # Message content types
-│   │   ├── TextPart.php
-│   │   ├── FilePart.php
-│   │   └── DataPart.php
-│   ├── File/                      # File attachment types
-│   │   ├── FileWithBytes.php
-│   │   └── FileWithUri.php
-│   └── AgentCard/                 # Agent capability models
-│       ├── AgentCard.php
-│       ├── AgentProvider.php
-│       └── AgentSkill.php
-├── Server/
-│   ├── A2AServer.php              # Abstract server (extend for each agent)
-│   └── RequestParser.php          # JSON-RPC parsing
-├── JsonRpc/                       # JSON-RPC protocol
-│   ├── JsonRpcRequest.php
-│   ├── JsonRpcResponse.php
-│   └── JsonRpcError.php
-├── Http/                          # Framework-agnostic HTTP
-│   ├── HttpRequestInterface.php
-│   ├── HttpResponseInterface.php
-│   ├── A2AHttpHandler.php
-│   └── Laravel/                   # Laravel integration
-│       ├── A2AServiceProvider.php
-│       ├── A2A.php                # Route helper
-│       ├── A2AController.php
-│       ├── LaravelHttpRequest.php
-│       ├── LaravelHttpResponse.php
-│       ├── Console/
-│       │   └── MakeA2AServerCommand.php
-│       └── Examples/
-│           ├── DataAnalystServer.php
-│           └── TranslatorServer.php
-└── Example/
-    └── InMemoryTaskRepository.php # Reference implementation
-```
-
-### Design Philosophy
+### Design Principles
 
 **One Server = One Agent**
 

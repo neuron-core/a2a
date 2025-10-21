@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace NeuronCore\A2A\JsonRpc;
 
-final class JsonRpcError
+class JsonRpcError
 {
     public function __construct(
         public int $code,

@@ -7,7 +7,7 @@ namespace NeuronCore\A2A\Laravel;
 use Illuminate\Http\JsonResponse;
 use NeuronCore\A2A\Http\HttpResponseInterface;
 
-final class LaravelHttpResponse implements HttpResponseInterface
+class LaravelHttpResponse implements HttpResponseInterface
 {
     protected int $statusCode = 200;
     protected array $headers = [];

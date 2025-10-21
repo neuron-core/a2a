@@ -7,7 +7,7 @@ namespace NeuronCore\A2A\Laravel;
 use Illuminate\Support\ServiceProvider;
 use NeuronCore\A2A\Laravel\Console\MakeA2AServerCommand;
 
-final class A2AServiceProvider extends ServiceProvider
+class A2AServiceProvider extends ServiceProvider
 {
     public function register(): void
     {

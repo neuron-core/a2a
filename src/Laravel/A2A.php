@@ -7,7 +7,7 @@ namespace NeuronCore\A2A\Laravel;
 use Illuminate\Routing\Route as LaravelRoute;
 use Illuminate\Support\Facades\Route;
 
-final class A2A
+class A2A
 {
     /**
      * @param class-string $serverClass

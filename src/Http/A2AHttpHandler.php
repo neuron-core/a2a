@@ -8,7 +8,7 @@ use NeuronCore\A2A\Contract\AgentCardProviderInterface;
 use NeuronCore\A2A\JsonRpc\JsonRpcRequest;
 use NeuronCore\A2A\Server\A2AServer;
 
-final class A2AHttpHandler
+class A2AHttpHandler
 {
     public function __construct(
         protected A2AServer $server,

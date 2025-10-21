@@ -10,7 +10,7 @@ use Illuminate\Routing\Controller;
 use NeuronCore\A2A\JsonRpc\JsonRpcRequest;
 use NeuronCore\A2A\Server\A2AServer;
 
-final class A2AController extends Controller
+class A2AController extends Controller
 {
     public function handle(Request $request): JsonResponse
     {

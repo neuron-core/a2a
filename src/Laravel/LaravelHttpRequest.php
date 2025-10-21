@@ -7,7 +7,7 @@ namespace NeuronCore\A2A\Laravel;
 use Illuminate\Http\Request;
 use NeuronCore\A2A\Http\HttpRequestInterface;
 
-final class LaravelHttpRequest implements HttpRequestInterface
+class LaravelHttpRequest implements HttpRequestInterface
 {
     public function __construct(
         protected Request $request,

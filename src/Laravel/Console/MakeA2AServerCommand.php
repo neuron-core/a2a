@@ -7,7 +7,7 @@ namespace NeuronCore\A2A\Laravel\Console;
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;
 
-final class MakeA2AServerCommand extends GeneratorCommand
+class MakeA2AServerCommand extends GeneratorCommand
 {
     protected $signature = 'make:a2a {name : The name of the A2A server}';
 

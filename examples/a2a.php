@@ -7,7 +7,6 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use NeuronCore\A2A\Contract\MessageHandlerInterface;
 use NeuronCore\A2A\Enum\TaskState;
 use NeuronCore\A2A\Example\InMemoryTaskRepository;
-use NeuronCore\A2A\Http\A2AHttpHandler;
 use NeuronCore\A2A\Http\HttpRequestInterface;
 use NeuronCore\A2A\Http\HttpResponseInterface;
 use NeuronCore\A2A\Model\AgentCard\AgentCard;
@@ -30,14 +29,14 @@ class SimpleEchoServer extends A2AServer
 
     protected function messageHandler(): MessageHandlerInterface
     {
-        return new class implements MessageHandlerInterface {
+        return new class () implements MessageHandlerInterface {
             public function handle(Task $task, array $messages): Task
             {
                 // Merge new messages with existing history
-                $history = array_merge($task->history ?? [], $messages);
+                $history = \array_merge($task->history ?? [], $messages);
 
                 // Process the last user message
-                $lastMessage = end($messages);
+                $lastMessage = \end($messages);
                 $userText = '';
 
                 foreach ($lastMessage->parts as $part) {
@@ -58,7 +57,7 @@ class SimpleEchoServer extends A2AServer
 
                 // Create an artifact with the response
                 $artifact = new Artifact(
-                    id: uniqid('artifact_', true),
+                    id: \uniqid('artifact_', true),
                     parts: [
                         new TextPart("Response to: {$userText}"),
                     ],
@@ -139,7 +138,7 @@ class SimpleHttpRequest implements HttpRequestInterface
 
     public function getHeader(string $name): ?string
     {
-        return $this->headers[strtolower($name)] ?? null;
+        return $this->headers[\strtolower($name)] ?? null;
     }
 }
 
@@ -185,7 +184,7 @@ $server = new SimpleEchoServer();
 echo "=== Example 1: Get Agent Card ===\n\n";
 echo "HTTP/1.1 200\n";
 echo "Content-Type: application/json\n\n";
-echo json_encode($server->getAgentCard(), JSON_PRETTY_PRINT);
+echo \json_encode($server->getAgentCard(), \JSON_PRETTY_PRINT);
 echo "\n\n\n";
 
 // 5. Example 2: Send a message
@@ -214,7 +213,7 @@ $jsonRpcResponse = $server->handleRequest($jsonRpcRequest);
 
 echo "HTTP/1.1 200\n";
 echo "Content-Type: application/json\n\n";
-echo json_encode($jsonRpcResponse->toArray(), JSON_PRETTY_PRINT);
+echo \json_encode($jsonRpcResponse->toArray(), \JSON_PRETTY_PRINT);
 echo "\n\n\n";
 
 // 6. Example 3: List all tasks
@@ -233,5 +232,5 @@ $jsonRpcResponse = $server->handleRequest($jsonRpcRequest);
 
 echo "HTTP/1.1 200\n";
 echo "Content-Type: application/json\n\n";
-echo json_encode($jsonRpcResponse->toArray(), JSON_PRETTY_PRINT);
+echo \json_encode($jsonRpcResponse->toArray(), \JSON_PRETTY_PRINT);
 echo "\n";

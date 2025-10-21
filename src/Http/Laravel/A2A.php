@@ -14,7 +14,7 @@ final class A2A
      */
     public static function route(string $path, string $serverClass): LaravelRoute
     {
-        $agentCardPath = rtrim($path, '/') . '/.well-known/agent-card.json';
+        $agentCardPath = \rtrim($path, '/') . '/.well-known/agent-card.json';
 
         Route::get($agentCardPath, [A2AController::class, 'handleAgentCard'])
             ->defaults('serverClass', $serverClass);

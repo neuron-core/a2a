@@ -31,16 +31,14 @@ final class LaravelHttpResponse implements HttpResponseInterface
         return $this;
     }
 
-    public function send(): JsonResponse
+    public function send(): void
     {
-        $data = json_decode($this->body, true);
+        $data = \json_decode($this->body, true);
 
         $response = new JsonResponse($data, $this->statusCode);
 
         foreach ($this->headers as $name => $value) {
             $response->header($name, $value);
         }
-
-        return $response;
     }
 }

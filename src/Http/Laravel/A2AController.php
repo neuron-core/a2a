@@ -16,7 +16,7 @@ final class A2AController extends Controller
     {
         $serverClass = $request->route('serverClass');
 
-        if (!$serverClass || !is_subclass_of($serverClass, A2AServer::class)) {
+        if (!$serverClass || !\is_subclass_of($serverClass, A2AServer::class)) {
             return new JsonResponse(['error' => 'Invalid server configuration'], 500);
         }
 
@@ -29,7 +29,7 @@ final class A2AController extends Controller
         }
 
         try {
-            $data = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+            $data = \json_decode($body, true, 512, \JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
             return new JsonResponse(['error' => 'Invalid JSON: ' . $e->getMessage()], 400);
         }
@@ -44,7 +44,7 @@ final class A2AController extends Controller
     {
         $serverClass = $request->route('serverClass');
 
-        if (!$serverClass || !is_subclass_of($serverClass, A2AServer::class)) {
+        if (!$serverClass || !\is_subclass_of($serverClass, A2AServer::class)) {
             return new JsonResponse(['error' => 'Invalid server configuration'], 500);
         }
 

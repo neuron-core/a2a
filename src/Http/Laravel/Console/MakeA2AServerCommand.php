@@ -20,31 +20,33 @@ final class MakeA2AServerCommand extends GeneratorCommand
         return __DIR__ . '/stubs/a2a-server.stub';
     }
 
-    protected function getDefaultNamespace($rootNamespace): string
+    // @phpstan-ignore-next-line
+    protected function getDefaultNamespace($rootNamespace)
     {
         return $rootNamespace . '\\A2A';
     }
 
-    protected function buildClass($name): string
+    // @phpstan-ignore-next-line
+    protected function buildClass($name)
     {
         $stub = parent::buildClass($name);
 
         $serverName = $this->getNameInput();
         $serverClass = Str::studly($serverName);
 
-        return str_replace(
+        return \str_replace(
             ['{{ serverName }}', '{{ serverClass }}'],
             [$serverName, $serverClass],
             $stub
         );
     }
 
-    public function handle(): int
+    public function handle(): bool
     {
         $result = parent::handle();
 
         if ($result === false) {
-            return 1;
+            return false;
         }
 
         $this->generateTaskRepository();
@@ -53,7 +55,7 @@ final class MakeA2AServerCommand extends GeneratorCommand
 
         $this->displaySuccessMessage();
 
-        return 0;
+        return true;
     }
 
     protected function generateTaskRepository(): void
@@ -67,7 +69,7 @@ final class MakeA2AServerCommand extends GeneratorCommand
         $stub = $this->replaceNamespace($stub, $this->qualifyClass($name))
             ->replaceClass($stub, $name);
 
-        $stub = str_replace(
+        $stub = \str_replace(
             '{{ serverName }}',
             $this->getNameInput(),
             $stub
@@ -87,7 +89,7 @@ final class MakeA2AServerCommand extends GeneratorCommand
         $stub = $this->replaceNamespace($stub, $this->qualifyClass($name))
             ->replaceClass($stub, $name);
 
-        $stub = str_replace(
+        $stub = \str_replace(
             '{{ serverName }}',
             $this->getNameInput(),
             $stub
@@ -108,7 +110,7 @@ final class MakeA2AServerCommand extends GeneratorCommand
             ->replaceClass($stub, $name);
 
         $serverName = $this->getNameInput();
-        $stub = str_replace(
+        $stub = \str_replace(
             ['{{ serverName }}', '{{ serverNameLower }}'],
             [$serverName, Str::kebab($serverName)],
             $stub

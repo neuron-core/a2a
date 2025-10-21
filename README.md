@@ -278,7 +278,7 @@ Laravel gets first-class support with Artisan commands, service providers, and r
 
 #### 1. Register Service Provider
 
-In `config/app.php`:
+In `config/app.php` or `bootstrap/providers.php` based on your project structure:
 
 ```php
 'providers' => [
@@ -287,9 +287,7 @@ In `config/app.php`:
 ],
 ```
 
-Or use Laravel 11+ auto-discovery.
-
-#### 2. Generate an Agent
+#### 2. Generate an Agent server
 
 ```bash
 php artisan make:a2a DataAnalyst

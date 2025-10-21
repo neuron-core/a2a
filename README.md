@@ -26,12 +26,8 @@ The **A2A (Agent-to-Agent) Protocol** is an open standard that enables seamless 
 ### What This Library Provides
 
 - ✅ **Complete A2A Protocol Implementation** - JSON-RPC 2.0 over HTTP
-- ✅ **Framework-Agnostic Core** - Use with any PHP framework or standalone
-- ✅ **Laravel First-Class Support** - Artisan commands, service providers, routing
-- ✅ **Multi-Agent Architecture** - Host multiple specialized agents in one application
+- ✅ **Multi-Agent Architecture—**Host multiple specialized agents in one application
 - ✅ **Modern PHP 8.1+** - Enums, constructor promotion, readonly classes, union types
-- ✅ **Interface-Driven Design** - Swap implementations easily
-- ✅ **MVP-Focused** - Minimal, clean code without unnecessary complexity
 
 ---
 
@@ -53,9 +49,9 @@ The **A2A (Agent-to-Agent) Protocol** is an open standard that enables seamless 
 
 ### Framework Support
 
-- ✅ **Laravel** - Full integration with Artisan commands and routing
+- ✅ **Laravel—**Full integration with Artisan commands and routing
 - ✅ **Standalone** - Framework-agnostic HTTP interfaces
-- 🔄 **Other Frameworks** - Easy to add adapters (Symfony, Slim, etc.)
+- 🔄 **Other Frameworks—**Easy to add adapters (Symfony, Slim, etc.)
 
 ---
 
@@ -249,7 +245,7 @@ class MyMessageHandler implements MessageHandlerInterface
         // Call your AI service (OpenAI, Claude, local model, etc.)
         $aiResponse = $this->callAI($userText);
 
-        // Create agent response
+        // Create an agent response
         $agentMessage = new Message(
             role: 'agent',
             parts: [new TextPart($aiResponse)]
@@ -263,7 +259,7 @@ class MyMessageHandler implements MessageHandlerInterface
             parts: [new TextPart($aiResponse)]
         );
 
-        // Return completed task
+        // Return a completed task
         return new Task(
             id: $task->id,
             contextId: $task->contextId,
@@ -300,7 +296,7 @@ class MyMessageHandler implements MessageHandlerInterface
 ```php
 use NeuronCore\A2A\JsonRpc\JsonRpcRequest;
 
-// Create server instance
+// Create a server instance
 $server = new MyAIAgent();
 
 // Handle JSON-RPC request
@@ -370,7 +366,7 @@ public function handle(Task $task, array $messages): Task
         'messages' => $this->convertMessages($messages),
     ]);
 
-    // Return completed task
+    // Return a completed task
     // ... (scaffolded code included)
 }
 ```
@@ -484,35 +480,17 @@ Tasks can be grouped by `contextId` for conversation continuity:
 
 **File:** `examples/a2a.php`
 
-A complete working example demonstrating:
+A complete working example:
 - Creating a concrete A2AServer
 - Implementing message handling
 - Defining agent card
 - Handling JSON-RPC requests
-- Getting agent card
+- Getting the agent card
 
 Run with:
 ```bash
 php examples/a2a.php
 ```
-
-### Example 2: Data Analyst Agent (Laravel)
-
-**File:** `src/Http/Laravel/Examples/DataAnalystServer.php`
-
-A specialized agent for data analysis showing:
-- Laravel integration
-- Anonymous class implementations
-- Skill definitions for specific domain
-
-### Example 3: Translator Agent (Laravel)
-
-**File:** `src/Http/Laravel/Examples/TranslatorServer.php`
-
-A translation agent demonstrating:
-- Different skill types
-- Alternative agent configuration
-- Language-specific examples
 
 ---
 
@@ -622,7 +600,7 @@ interface MessageHandlerInterface
 
 ### Custom Task Repository
 
-Use Eloquent, Redis, or any storage backend:
+Use Eloquent, Redis, File, or any storage backend:
 
 ```php
 class EloquentTaskRepository implements TaskRepositoryInterface
@@ -639,32 +617,6 @@ class EloquentTaskRepository implements TaskRepositoryInterface
     {
         $model = TaskModel::find($taskId);
         return $model ? unserialize($model->data) : null;
-    }
-}
-```
-
-### Multiple AI Services
-
-Different agents can use different AI providers:
-
-```php
-class OpenAIAgent extends A2AServer
-{
-    protected function messageHandler(): MessageHandlerInterface
-    {
-        return new OpenAIMessageHandler(
-            client: new OpenAI\Client(config('openai.key'))
-        );
-    }
-}
-
-class ClaudeAgent extends A2AServer
-{
-    protected function messageHandler(): MessageHandlerInterface
-    {
-        return new ClaudeMessageHandler(
-            client: new Anthropic\Client(config('anthropic.key'))
-        );
     }
 }
 ```
@@ -729,33 +681,9 @@ $dataPart = new DataPart(
 
 ---
 
-## Resources
-
-- **A2A Protocol Specification:** https://a2a-protocol.org/latest/specification/
-- **Laravel Documentation:** `src/Http/Laravel/README.md`
-- **Artisan Command Reference:** `src/Http/Laravel/Console/README.md`
-- **Examples:** `examples/README.md`
-
----
-
-## Design Principles
-
-This implementation follows these core principles:
-
-1. **MVP-Focused** - Minimal code, maximum clarity
-2. **Framework-Agnostic Core** - Works with any PHP framework
-3. **Interface-Driven** - Swap implementations easily
-4. **Modern PHP 8.1+** - Leverage latest language features
-5. **Protocol-Compliant** - Follows A2A specification strictly
-6. **One Agent = One Server** - Clear separation of concerns
-7. **Production-Ready** - Type-safe, tested, documented
-
----
-
 ## Contributing
 
 When contributing to this project:
-- Follow the MVP philosophy - no unnecessary features
 - Use modern PHP 8.1+ features
 - Maintain interface-driven design
 - Write minimal, clean code
@@ -765,4 +693,4 @@ When contributing to this project:
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License—See LICENSE file for details

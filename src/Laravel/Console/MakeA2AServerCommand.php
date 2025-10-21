@@ -23,7 +23,7 @@ class MakeA2AServerCommand extends GeneratorCommand
     // @phpstan-ignore-next-line
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\\A2A';
+        return $rootNamespace . '\\A2A\\' . $this->getNameInput();
     }
 
     // @phpstan-ignore-next-line
@@ -123,23 +123,23 @@ class MakeA2AServerCommand extends GeneratorCommand
     {
         $serverName = $this->getNameInput();
         $serverClass = Str::studly($serverName) . 'Server';
-        $namespace = $this->getDefaultNamespace($this->laravel->getNamespace());
+        $baseNamespace = $this->laravel->getNamespace() . 'A2A\\' . $serverName;
 
         $this->info('');
         $this->info('A2A Server created successfully!');
         $this->info('');
         $this->info('Generated files:');
-        $this->line("  - {$namespace}\\{$serverClass}");
-        $this->line("  - {$namespace}\\{$serverName}TaskRepository");
-        $this->line("  - {$namespace}\\{$serverName}MessageHandler");
-        $this->line("  - {$namespace}\\{$serverName}AgentCard");
+        $this->line("  - {$baseNamespace}\\{$serverClass}");
+        $this->line("  - {$baseNamespace}\\{$serverName}TaskRepository");
+        $this->line("  - {$baseNamespace}\\{$serverName}MessageHandler");
+        $this->line("  - {$baseNamespace}\\{$serverName}AgentCard");
         $this->info('');
         $this->info('Next steps:');
         $this->line('  1. Implement your AI logic in ' . $serverName . 'MessageHandler');
         $this->line('  2. Configure agent capabilities in ' . $serverName . 'AgentCard');
         $this->line('  3. Register route in routes/api.php:');
         $this->info('');
-        $this->line("     A2A::route('/a2a/" . Str::kebab($serverName) . "', \\{$namespace}\\{$serverClass}::class);");
+        $this->line("     A2A::route('/a2a/" . Str::kebab($serverName) . "', \\{$baseNamespace}\\{$serverClass}::class);");
         $this->info('');
     }
 }

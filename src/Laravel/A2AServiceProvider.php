@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace NeuronCore\A2A\Http\Laravel;
+namespace NeuronCore\A2A\Laravel;
 
 use Illuminate\Support\ServiceProvider;
-use NeuronCore\A2A\Http\Laravel\Console\MakeA2AServerCommand;
+use NeuronCore\A2A\Laravel\Console\MakeA2AServerCommand;
 
 final class A2AServiceProvider extends ServiceProvider
 {

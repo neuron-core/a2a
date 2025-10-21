@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace NeuronCore\A2A\Tests;
 
 use NeuronCore\A2A\Enum\TaskState;
-use NeuronCore\A2A\Example\InMemoryTaskRepository;
+use NeuronCore\A2A\Repository\InMemoryTaskRepository;
 use NeuronCore\A2A\Model\Part\TextPart;
 use NeuronCore\A2A\Model\Task;
 use NeuronCore\A2A\Model\TaskStatus;

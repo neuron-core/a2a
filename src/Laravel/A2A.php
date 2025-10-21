@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NeuronCore\A2A\Http\Laravel;
+namespace NeuronCore\A2A\Laravel;
 
 use Illuminate\Routing\Route as LaravelRoute;
 use Illuminate\Support\Facades\Route;

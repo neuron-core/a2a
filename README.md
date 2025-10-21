@@ -335,7 +335,7 @@ In `config/app.php`:
 ```php
 'providers' => [
     // ...
-    NeuronCore\A2A\Http\Laravel\A2AServiceProvider::class,
+    NeuronCore\A2A\Laravel\A2AServiceProvider::class,
 ],
 ```
 
@@ -384,7 +384,7 @@ Open `app/A2A/DataAnalystAgentCard.php` and update:
 In `routes/api.php`:
 
 ```php
-use NeuronCore\A2A\Http\Laravel\A2A;
+use NeuronCore\A2A\Laravel\A2A;
 use App\A2A\DataAnalystServer;
 
 A2A::route('/a2a/data-analyst', DataAnalystServer::class)

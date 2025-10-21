@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NeuronCore\A2A\Http\Laravel\Console;
+namespace NeuronCore\A2A\Laravel\Console;
 
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;

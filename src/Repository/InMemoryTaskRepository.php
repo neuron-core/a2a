@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace NeuronCore\A2A\Example;
+namespace NeuronCore\A2A\Repository;
 
 use NeuronCore\A2A\Contract\TaskRepositoryInterface;
 use NeuronCore\A2A\Model\Task;
 
-final class InMemoryTaskRepository implements TaskRepositoryInterface
+class InMemoryTaskRepository implements TaskRepositoryInterface
 {
     /**
      * @var array<string, Task>

@@ -7,7 +7,7 @@ namespace NeuronCore\A2A\Tests;
 use NeuronCore\A2A\Contract\MessageHandlerInterface;
 use NeuronCore\A2A\Contract\TaskRepositoryInterface;
 use NeuronCore\A2A\Enum\TaskState;
-use NeuronCore\A2A\Example\InMemoryTaskRepository;
+use NeuronCore\A2A\Repository\InMemoryTaskRepository;
 use NeuronCore\A2A\JsonRpc\JsonRpcError;
 use NeuronCore\A2A\JsonRpc\JsonRpcRequest;
 use NeuronCore\A2A\JsonRpc\JsonRpcResponse;

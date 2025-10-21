@@ -6,7 +6,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use NeuronCore\A2A\Contract\MessageHandlerInterface;
 use NeuronCore\A2A\Enum\TaskState;
-use NeuronCore\A2A\Example\InMemoryTaskRepository;
+use NeuronCore\A2A\Repository\InMemoryTaskRepository;
 use NeuronCore\A2A\Http\HttpRequestInterface;
 use NeuronCore\A2A\Http\HttpResponseInterface;
 use NeuronCore\A2A\Model\AgentCard\AgentCard;

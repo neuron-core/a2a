@@ -626,8 +626,8 @@ class EloquentTaskRepository implements TaskRepositoryInterface
 Laravel example with custom middleware:
 
 ```php
-A2A::route('/a2a/premium-agent', PremiumAgent::class)
-    ->middleware(['auth:api', 'subscription:premium', 'throttle:1000,1']);
+A2A::route('/a2a/premium-agent', DataAnalystAgent::class)
+    ->middleware(['auth:api']);
 ```
 
 ### File Attachments

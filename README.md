@@ -26,8 +26,7 @@ The **A2A (Agent-to-Agent) Protocol** is an open standard that enables seamless 
 ### What This Library Provides
 
 - ✅ **Complete A2A Protocol Implementation** - JSON-RPC 2.0 over HTTP
-- ✅ **Multi-Agent Architecture—**Host multiple specialized agents in one application
-- ✅ **Modern PHP 8.1+** - Enums, constructor promotion, readonly classes, union types
+- ✅ **Multi-Agent Architecture**-Host multiple specialized agents in one application
 
 ---
 
@@ -41,39 +40,11 @@ The **A2A (Agent-to-Agent) Protocol** is an open standard that enables seamless 
 - ✅ `tasks/cancel` - Cancel a running task
 - ✅ `agent/getAuthenticatedExtendedCard` - Get agent capabilities
 
-### Agent Card
-
-- ✅ Served at `/.well-known/agent-card.json`
-- ✅ Describes agent capabilities, skills, and authentication
-- ✅ Enables agent discovery and interoperability
-
 ### Framework Support
 
-- ✅ **Laravel—**Full integration with Artisan commands and routing
+- ✅ **Laravel—**Full integration with Artisan commands and routes
 - ✅ **Standalone** - Framework-agnostic HTTP interfaces
 - 🔄 **Other Frameworks—**Easy to add adapters (Symfony, Slim, etc.)
-
----
-
-## Architecture
-
-### Design Principles
-
-**One Server = One Agent**
-
-Each concrete `A2AServer` class represents a single specialized AI agent. This enables:
-- Clear separation of concerns
-- Independent configuration per agent
-- Easy scaling and deployment
-- Multiple agents in one application
-
-**Interface-Driven**
-
-Two core interfaces must be implemented for each agent:
-1. `TaskRepositoryInterface` - How tasks are persisted
-2. `MessageHandlerInterface` - How messages are processed (your AI logic)
-
-The agent card is returned directly via the `agentCard()` method.
 
 ---
 
@@ -82,6 +53,12 @@ The agent card is returned directly via the `agentCard()` method.
 ### Standalone Usage
 
 #### 1. Create Your Agent Server
+
+You can create your own server class extending `NeuronCore\A2A\A2AServer`. This class provides the main entry point to 
+expose your AI agent to the world. You need to implement two components to create a server:
+
+- Task Repository - Store and retrieve tasks
+- Message Handler - Handle messages and return task results
 
 ```php
 use NeuronCore\A2A\Server\A2AServer;
@@ -172,7 +149,12 @@ class MyTaskRepository implements TaskRepositoryInterface
 
 #### 3. Implement Message Handler (Your AI Logic)
 
+The message handler is responsible for handling incoming messages and returning task results. It's the place where you 
+execute your AI Agent and return the results.
+
 ```php
+use NeuronAI\Agent;
+use NeuronAI\Chat\Messages\UserMessage;
 use NeuronCore\A2A\Contract\MessageHandlerInterface;
 use NeuronCore\A2A\Model\Task;
 use NeuronCore\A2A\Model\Message;
@@ -190,8 +172,10 @@ class MyMessageHandler implements MessageHandlerInterface
         // Extract user message
         $userText = $this->extractText($messages[0]);
 
-        // Call your AI service (OpenAI, Claude, local model, etc.)
-        $aiResponse = $this->callAI($userText);
+        $aiResponse = Agent::make()
+            ->setProvider(...)
+            ->chat(new UserMessage($userText))
+            ->getContent();
 
         // Create an agent response
         $agentMessage = new Message(
@@ -200,12 +184,6 @@ class MyMessageHandler implements MessageHandlerInterface
         );
 
         $history[] = $agentMessage;
-
-        // Create artifact
-        $artifact = new Artifact(
-            id: uniqid('artifact_'),
-            parts: [new TextPart($aiResponse)]
-        );
 
         // Return a completed task
         return new Task(
@@ -216,14 +194,7 @@ class MyMessageHandler implements MessageHandlerInterface
                 message: new TextPart('Task completed')
             ),
             history: $history,
-            artifacts: [$artifact]
         );
-    }
-
-    protected function callAI(string $input): string
-    {
-        // Your AI integration here
-        return "AI response to: {$input}";
     }
 
     protected function extractText(Message $message): string
@@ -297,35 +268,10 @@ php artisan make:a2a DataAnalyst
 - `app/A2A/DataAnalystServer.php` - Main server
 - `app/A2A/DataAnalystTaskRepository.php` - Task storage
 - `app/A2A/DataAnalystMessageHandler.php` - AI logic
-- `app/A2A/DataAnalystAgentCard.php` - Agent capabilities
 
-#### 3. Implement Your AI Logic
+You must implement the Task Repository and Message Handler.
 
-Open `app/A2A/DataAnalystMessageHandler.php`:
-
-```php
-public function handle(Task $task, array $messages): Task
-{
-    // Your AI implementation
-    $response = app(\OpenAI\Client::class)->chat()->create([
-        'model' => 'gpt-4',
-        'messages' => $this->convertMessages($messages),
-    ]);
-
-    // Return a completed task
-    // ... (scaffolded code included)
-}
-```
-
-#### 4. Configure Agent Card
-
-Open `app/A2A/DataAnalystAgentCard.php` and update:
-- Agent name and description
-- Skills and capabilities
-- Input/output formats
-- Tags and examples
-
-#### 5. Register Routes
+#### 4. Register Routes
 
 In `routes/api.php`:
 
@@ -334,7 +280,7 @@ use NeuronCore\A2A\Laravel\A2A;
 use App\A2A\DataAnalystServer;
 
 A2A::route('/a2a/data-analyst', DataAnalystServer::class)
-    ->middleware(['auth:api', 'throttle:60,1']);
+    ->middleware(['auth:api']);
 ```
 
 **Done!** Your agent is live at:
@@ -361,30 +307,11 @@ A2A::route('/a2a/code-generator', CodeGeneratorServer::class);
 Each agent is completely independent with its own:
 - Task repository
 - Message handler (AI logic)
-- Agent card (capabilities)
 - Middleware configuration
 
 ---
 
 ## Core Concepts
-
-### Task Lifecycle
-
-Tasks progress through these states:
-
-```
-QUEUED → RUNNING → COMPLETED
-                ↓
-              FAILED
-                ↓
-             CANCELED
-                ↓
-             REJECTED
-```
-
-Terminal states: `COMPLETED`, `FAILED`, `CANCELED`, `REJECTED`
-
-Once a task reaches a terminal state, it cannot be modified.
 
 ### Message Structure
 
@@ -417,26 +344,6 @@ Tasks can be grouped by `contextId` for conversation continuity:
 - Multiple tasks can share the same context
 - Use `tasks/list` with `contextId` filter to retrieve related tasks
 - Useful for multi-turn conversations
-
----
-
-## Complete Examples
-
-### Example 1: Echo Agent (Standalone)
-
-**File:** `examples/a2a.php`
-
-A complete working example:
-- Creating a concrete A2AServer
-- Implementing message handling
-- Defining agent card
-- Handling JSON-RPC requests
-- Getting the agent card
-
-Run with:
-```bash
-php examples/a2a.php
-```
 
 ---
 
@@ -477,66 +384,6 @@ interface TaskRepositoryInterface
 interface MessageHandlerInterface
 {
     public function handle(Task $task, array $messages): Task;
-}
-```
-
-### JSON-RPC Methods
-
-**message/send**
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "method": "message/send",
-  "params": {
-    "taskId": "optional-existing-task-id",
-    "messages": [
-      {
-        "role": "user",
-        "parts": [
-          {"kind": "text", "text": "Hello"}
-        ]
-      }
-    ]
-  }
-}
-```
-
-**tasks/get**
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 2,
-  "method": "tasks/get",
-  "params": {
-    "taskId": "task_123"
-  }
-}
-```
-
-**tasks/list**
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 3,
-  "method": "tasks/list",
-  "params": {
-    "contextId": "context_abc",
-    "limit": 10,
-    "offset": 0
-  }
-}
-```
-
-**tasks/cancel**
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 4,
-  "method": "tasks/cancel",
-  "params": {
-    "taskId": "task_123"
-  }
 }
 ```
 

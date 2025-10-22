@@ -6,12 +6,10 @@ A framework-agnostic PHP implementation of the **A2A (Agent-to-Agent) Protocol**
 
 - [Introduction](#introduction)
 - [Features](#features)
-- [Architecture](#architecture)
 - [Quick Start](#quick-start)
   - [Standalone Usage](#standalone-usage)
   - [Laravel Integration](#laravel-integration)
 - [Core Concepts](#core-concepts)
-- [Complete Examples](#complete-examples)
 - [API Reference](#api-reference)
 - [Advanced Usage](#advanced-usage)
 
